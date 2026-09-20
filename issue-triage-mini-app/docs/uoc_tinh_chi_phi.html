@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Báo cáo Ước tính Chi phí — Issue Triage Mini-app</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --border: #e2e8f0;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #10b981;
+      --code-bg: #0f172a;
+      --code-text: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      background: var(--bg);
+      color: var(--text-main);
+      font-size: 1.1rem;
+      line-height: 1.7;
+      padding: 2.5rem 1rem;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 2.5rem;
+      border-radius: 1rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(14, 165, 233, 0.2);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      color: #38bdf8;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+    p.lead { color: #94a3b8; font-size: 1.1rem; }
+    .requirement-box {
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      background: rgba(255, 255, 255, 0.07);
+      border-left: 4px solid #38bdf8;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .requirement-box strong {
+      color: #7dd3fc;
+      display: block;
+      margin-bottom: 0.45rem;
+      font-size: 1rem;
+    }
+    .requirement-box ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    h2 {
+      font-size: 1.4rem;
+      color: #1e293b;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+    }
+    tr:hover td {
+      background: #f8fafc;
+    }
+    .highlight-row {
+      background: #ecfdf5 !important;
+      font-weight: 600;
+      color: #065f46;
+    }
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 1.25rem;
+      border-radius: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+    .metric-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .metric-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Ước Tính Chi Phí Vận Hành Issue Triage</h1>
+      <div class="requirement-box">
+        <strong>Yêu cầu đề bài (Slide 69):</strong>
+        <ul>
+          <li>Đo token của một input mẫu;</li>
+          <li>Nêu giả định giá;</li>
+          <li>Ước tính chi phí cho 10.000 issue/tháng.</li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- PHẦN 1: ĐO TOKEN THỰC TẾ -->
+    <section class="card">
+      <h2>1. Đo Token Trên Một Input Mẫu</h2>
+      <p>Áp dụng tokenizer <code>o200k_base</code> (chuẩn GPT-4o / GPT-4o-mini) và bộ đếm <code>tiktoken</code> cho chu trình triage 2 bước (Tool Call + Structured Output):</p>
+      
+      <pre><code>Mẫu kiểm thử:
+"Nút thanh toán trả HTTP 500 với mọi thẻ Visa từ 14:30. Hãy triage issue và cho biết team nào cần xử lý."</code></pre>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Thành phần trong chu trình xử lý</th>
+            <th>Loại Token</th>
+            <th>Số lượng (Tokens)</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>System Prompt + Tool Schema</td>
+            <td>Input</td>
+            <td>~115</td>
+            <td>Chỉ thị vai trò & khai báo công cụ <code>get_component_owner</code></td>
+          </tr>
+          <tr>
+            <td>User Prompt (đã bọc qua XML Template)</td>
+            <td>Input</td>
+            <td>~165</td>
+            <td>Được format vào thẻ <code>&lt;task&gt;</code> và <code>&lt;input&gt;</code></td>
+          </tr>
+          <tr>
+            <td>Lượt 1: Model đề xuất gọi tool (tool_call)</td>
+            <td>Output</td>
+            <td>~25</td>
+            <td>JSON: <code>name="get_component_owner", args={"component":"payment"}</code></td>
+          </tr>
+          <tr>
+            <td>Lượt 2: Gửi lịch sử + Tool Result về model</td>
+            <td>Input</td>
+            <td>~335</td>
+            <td>Toàn bộ context lượt 1 + kết quả app thực thi</td>
+          </tr>
+          <tr>
+            <td>Lượt 2: Model trả về Pydantic <code>IssueTriage</code></td>
+            <td>Output</td>
+            <td>~65</td>
+            <td>Cấu trúc JSON đầy đủ status, severity, reason...</td>
+          </tr>
+          <tr class="highlight-row">
+            <td>Tổng tiêu thụ cho 1 issue hoàn chỉnh</td>
+            <td>Tổng hợp</td>
+            <td><strong>~705 tokens</strong></td>
+            <td><strong>Input: 615 tokens | Output: 90 tokens</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- PHẦN 2: GIẢ ĐỊNH GIÁ -->
+    <section class="card">
+      <h2>2. Giả Định Đơn Giá Nhà Cung Cấp</h2>
+      <p>Tham khảo bảng giá thị trường của các model phục vụ tác vụ phân loại và trích xuất cấu trúc (Structured Outputs & Tool Use):</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nhà cung cấp / Mô hình</th>
+            <th>Đơn giá Input (/1M tokens)</th>
+            <th>Đơn giá Output (/1M tokens)</th>
+            <th>Mức độ phù hợp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row">
+            <td><strong>Gemini 2.5 Flash / 1.5 Flash</strong></td>
+            <td><strong>$0.075</strong></td>
+            <td><strong>$0.300</strong></td>
+            <td><strong>Khuyên dùng (Chi phí tối ưu nhất, tốc độ cao)</strong></td>
+          </tr>
+          <tr>
+            <td>GPT-4o-mini</td>
+            <td>$0.150</td>
+            <td>$0.600</td>
+            <td>Rất tốt (Chuẩn OpenAI Structured Outputs)</td>
+          </tr>
+          <tr>
+            <td>GPT-4o (Chuẩn cao cấp)</td>
+            <td>$2.500</td>
+            <td>$10.000</td>
+            <td>Dư thừa năng lực cho bài toán phân loại sự cố</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- PHẦN 3: DỰ TOÁN CHO 10.000 ISSUE/THÁNG -->
+    <section class="card">
+      <h2>3. Ước Tính Chi Phí Cho 10.000 Issue / Tháng</h2>
+      <p>Với quy mô <strong>10.000 sự cố/tháng</strong>, lượng token ước tính là:</p>
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="metric-val">6.15 M</div>
+          <div class="metric-label">Input Tokens / Tháng</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">0.90 M</div>
+          <div class="metric-label">Output Tokens / Tháng</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">7.05 M</div>
+          <div class="metric-label">Tổng Tokens / Tháng</div>
+        </div>
+      </div>
+
+      <p>Công thức tính chi phí:</p>
+      <pre><code>Chi phí = (Input Tokens × Đơn giá Input) + (Output Tokens × Đơn giá Output)</code></pre>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Phương án mô hình</th>
+            <th>Chi phí Input / tháng</th>
+            <th>Chi phí Output / tháng</th>
+            <th>Tổng chi phí / tháng (USD)</th>
+            <th>Quy đổi (VNĐ ~ 25.500đ)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row">
+            <td><strong>Gemini Flash</strong></td>
+            <td>6.15 × $0.075 = $0.461</td>
+            <td>0.90 × $0.300 = $0.270</td>
+            <td><strong>~$0.73 / tháng</strong></td>
+            <td><strong>~18.600 VNĐ / tháng</strong></td>
+          </tr>
+          <tr>
+            <td><strong>GPT-4o-mini</strong></td>
+            <td>6.15 × $0.150 = $0.923</td>
+            <td>0.90 × $0.600 = $0.540</td>
+            <td><strong>~$1.46 / tháng</strong></td>
+            <td><strong>~37.200 VNĐ / tháng</strong></td>
+          </tr>
+          <tr>
+            <td><strong>GPT-4o</strong></td>
+            <td>6.15 × $2.500 = $15.375</td>
+            <td>0.90 × $10.000 = $9.000</td>
+            <td><strong>~$24.38 / tháng</strong></td>
+            <td><strong>~621.000 VNĐ / tháng</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- PHẦN 4: KẾT LUẬN & KIẾN NGHỊ -->
+    <section class="card">
+      <h2>4. Nhận Xét & Kiến Nghị Vận Hành</h2>
+      <ul style="padding-left: 1.5rem; color: var(--text-muted); line-height: 1.8;">
+        <li><strong>Hiệu quả kinh tế vượt trội:</strong> Chi phí vận hành mini-app hoàn toàn ở mức siêu rẻ (~18.000đ - 37.000đ/tháng cho 10.000 issue), chỉ tương đương một cốc cà phê nhưng tự động hóa được lượng công việc trực ban rất lớn.</li>
+        <li><strong>Lựa chọn tối ưu:</strong> Nên triển khai mô hình <strong>Gemini Flash</strong> hoặc <strong>GPT-4o-mini</strong> vì vừa hỗ trợ Tool Calling tốt, vừa hỗ trợ Structured Output bằng Pydantic/JSON Schema với độ trễ cực thấp.</li>
+        <li><strong>Khả năng tối ưu thêm (Prompt Caching):</strong> Nếu hệ thống có lượng issue dày đặc liên tục, tính năng Prompt Caching của các nhà cung cấp có thể giúp giảm thêm 50-80% chi phí cho phần System Prompt lặp lại.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>

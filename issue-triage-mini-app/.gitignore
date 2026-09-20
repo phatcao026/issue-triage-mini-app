@@ -1,0 +1,37 @@
+# =====================================================================
+# Git Ignore for SE111 - Agentic AI Project
+# =====================================================================
+
+# 1. Environment variables & Secrets (BẢO MẬT API KEY)
+.env
+*.env
+!.env.example
+
+# 2. Virtual Environments (Môi trường ảo)
+.venv/
+venv/
+env/
+ENV/
+.venv*/
+
+# 3. Python bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.pytest_cache/
+
+# 4. Streamlit local caches & runtime
+.streamlit/credentials.toml
+.streamlit/secrets.toml
+
+# 5. IDE & Code Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 6. Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini

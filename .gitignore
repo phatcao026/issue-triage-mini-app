@@ -1,0 +1,22 @@
+# =====================================================================
+# Git Ignore for SE111 - Agentic AI Workspace Root
+# =====================================================================
+
+# 1. Environment variables & Secrets
+**/.env
+**/*.env
+!**/.env.example
+
+# 2. Virtual Environments
+**/.venv/
+**/venv/
+**/env/
+
+# 3. Python Cache
+**/__pycache__/
+**/*.py[cod]
+
+# 4. OS files
+.DS_Store
+Thumbs.db
+desktop.ini

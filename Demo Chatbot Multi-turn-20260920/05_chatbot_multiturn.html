@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatbot multi-turn — cơ chế LLM-Powered App</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background: #eef1f5; color: #1c2430; }
+  header { padding: 12px 18px; background: #1c2b45; color: #fff; }
+  header h1 { margin: 0; font-size: 17px; }
+  header p { margin: 4px 0 0; font-size: 12px; color: #b7c4da; }
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            padding: 12px; height: calc(100vh - 62px); }
+  .pane { background: #fff; border: 1px solid #d5dbe4; border-radius: 10px;
+          display: flex; flex-direction: column; overflow: hidden; }
+  .pane h2 { margin: 0; padding: 10px 14px; font-size: 13px; letter-spacing: .3px;
+             text-transform: uppercase; color: #5a6a82; border-bottom: 1px solid #e6eaf0;
+             background: #f7f9fc; }
+  .scroll { flex: 1; overflow-y: auto; padding: 14px; }
+  .sys-row { display: flex; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #e6eaf0;
+             background: #fbfcfe; align-items: center; }
+  .sys-row label { font-size: 12px; color: #5a6a82; font-weight: 600; }
+  .sys-row input { flex: 1; padding: 6px 9px; border: 1px solid #cfd6e0;
+                   border-radius: 6px; font: inherit; }
+  .msg { margin-bottom: 10px; display: flex; }
+  .msg .bubble { padding: 8px 12px; border-radius: 12px; max-width: 82%;
+                 white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { justify-content: flex-end; }
+  .msg.user .bubble { background: #2563eb; color: #fff; border-bottom-right-radius: 3px; }
+  .msg.assistant .bubble { background: #eef1f6; color: #17202e; border-bottom-left-radius: 3px; }
+  .composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e6eaf0; }
+  .composer textarea { flex: 1; resize: none; height: 46px; padding: 8px 10px;
+                       border: 1px solid #cfd6e0; border-radius: 8px; font: inherit; }
+  .composer button { padding: 0 18px; border: 0; border-radius: 8px; background: #2563eb;
+                     color: #fff; font-weight: 600; cursor: pointer; }
+  .composer button:disabled { background: #9db4e6; cursor: default; }
+  .btn-ghost { background: #eef1f6; color: #33415c; border: 1px solid #cfd6e0;
+               padding: 0 12px; border-radius: 8px; cursor: pointer; }
+  .turn { border: 1px solid #e2e7ef; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .turn > .turn-head { background: #f2f5fa; padding: 6px 10px; font-size: 12px;
+                       color: #47566d; font-weight: 600; display: flex;
+                       justify-content: space-between; }
+  .turn pre { margin: 0; padding: 10px 12px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
+              white-space: pre-wrap; word-break: break-word; }
+  .role-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px;
+              border-radius: 4px; margin-right: 6px; vertical-align: middle; }
+  .role-system { background: #fde68a; color: #92400e; }
+  .role-user { background: #bfdbfe; color: #1e3a8a; }
+  .role-assistant { background: #d1fae5; color: #065f46; }
+  .msgline { padding: 8px 12px; border-top: 1px solid #eef1f6; }
+  .msgline:first-child { border-top: 0; }
+  .msgline .content { white-space: pre-wrap; word-break: break-word; }
+  .usage { padding: 8px 12px; background: #f7fbf8; border-top: 1px solid #d9efe3;
+           font: 12px ui-monospace, Menlo, monospace; color: #14663f; }
+  .empty { color: #90a0b7; font-size: 13px; padding: 18px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Chatbot multi-turn — cơ chế của một LLM-Powered App</h1>
+  <p>Trái: giao diện chat. Phải: đúng payload prompt gửi lên LLM mỗi lượt + usage provider trả về.</p>
+</header>
+<div class="layout">
+  <div class="pane">
+    <h2>Hội thoại</h2>
+    <div class="sys-row">
+      <label for="sys">System</label>
+      <input id="sys" value="__DEFAULT_SYSTEM__">
+      <button class="btn-ghost" id="reset">Reset</button>
+    </div>
+    <div class="scroll" id="chat"></div>
+    <div class="composer">
+      <textarea id="input" placeholder="Nhập tin nhắn… (Enter để gửi, Shift+Enter xuống dòng)"></textarea>
+      <button id="send">Gửi</button>
+    </div>
+  </div>
+  <div class="pane">
+    <h2>Prompt gửi đi mỗi lượt</h2>
+    <div class="scroll" id="inspect">
+      <div class="empty">Chưa có lượt nào. Gửi tin nhắn để xem payload messages được gửi tới LLM.</div>
+    </div>
+  </div>
+</div>
+<script>
+let history = [];            // [{role:"user"|"assistant", content}]
+let turnCount = 0;
+const chat = document.getElementById("chat");
+const inspect = document.getElementById("inspect");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const sysInput = document.getElementById("sys");
+
+function esc(s) {
+  return s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+}
+
+function addBubble(role, content) {
+  const row = document.createElement("div");
+  row.className = "msg " + role;
+  row.innerHTML = '<div class="bubble"></div>';
+  row.querySelector(".bubble").textContent = content;
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+  return row;
+}
+
+function renderTurn(request, usage) {
+  turnCount += 1;
+  if (turnCount === 1) inspect.innerHTML = "";
+  const turn = document.createElement("div");
+  turn.className = "turn";
+  let html = '<div class="turn-head"><span>Lượt #' + turnCount +
+             '</span><span>' + request.length + ' messages</span></div>';
+  for (const m of request) {
+    html += '<div class="msgline"><span class="role-tag role-' + m.role + '">' +
+            m.role + '</span><span class="content">' + esc(m.content) + '</span></div>';
+  }
+  if (usage) {
+    let line = 'usage → prompt: ' + (usage.prompt_tokens ?? "?") +
+               ' · completion: ' + (usage.completion_tokens ?? "?") +
+               ' · total: ' + (usage.total_tokens ?? "?");
+    if (usage.cached_tokens !== undefined && usage.cached_tokens !== null) {
+      const p = usage.prompt_tokens || 0;
+      const pct = p ? Math.round(usage.cached_tokens / p * 100) : 0;
+      line += ' · cache hit: ' + usage.cached_tokens + '/' + p + ' (' + pct + '%)';
+    }
+    html += '<div class="usage">' + line + '</div>';
+  }
+  turn.innerHTML = html;
+  inspect.appendChild(turn);
+  inspect.scrollTop = inspect.scrollHeight;
+}
+
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  addBubble("user", text);
+  history.push({ role: "user", content: text });
+  sendBtn.disabled = true;
+  const pending = addBubble("assistant", "…");
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system: sysInput.value, messages: history }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      pending.querySelector(".bubble").textContent = "⚠️ " + data.error;
+      history.pop();
+    } else {
+      pending.querySelector(".bubble").textContent = data.reply;
+      history.push({ role: "assistant", content: data.reply });
+      renderTurn(data.request, data.usage);
+    }
+  } catch (e) {
+    pending.querySelector(".bubble").textContent = "⚠️ " + e;
+    history.pop();
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+sendBtn.onclick = send;
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+document.getElementById("reset").onclick = () => {
+  history = []; turnCount = 0;
+  chat.innerHTML = "";
+  inspect.innerHTML = '<div class="empty">Đã reset. Gửi tin nhắn để bắt đầu lượt mới.</div>';
+};
+</script>
+</body>
+</html>
