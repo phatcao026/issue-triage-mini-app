@@ -1,6 +1,6 @@
 # BTVN#1: Issue Triage Mini-App (LLM-Powered App)
 
-> **Môn học:** SE111 — Agentic AI  
+> **Môn học:** SE373 — Agentic AI  
 > **Khoa:** Kỹ thuật Phần mềm — Trường Đại học Công nghệ Thông tin (UIT), ĐHQG-HCM.
 
 ---
